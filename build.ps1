@@ -95,7 +95,7 @@ foreach ($tfm in 'net9.0-windows', 'net10.0-windows') {
         $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path "$outputDir/$exe"))
         $text = [System.Text.Encoding]::UTF8.GetString($bytes)
         if ($text -match 'bin\\bin\\') {
-            throw "$exe still embeds a stacked bin\\ path — patcher failed"
+            throw "$exe still embeds a stacked bin\\ path patcher failed"
         }
         $dllName = [System.IO.Path]::ChangeExtension($exe, '.dll')
         if ($text -notmatch [regex]::Escape("bin\$dllName")) {
