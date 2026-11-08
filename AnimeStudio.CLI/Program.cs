@@ -48,6 +48,7 @@ namespace AnimeStudio.CLI
                 AssetsHelper.SetUnityVersion(o.UnityVersion);
 
                 TypeFlags.SetTypes(JsonConvert.DeserializeObject<Dictionary<ClassIDType, (bool, bool)>>(Settings.Default.types));
+                Studio.AnimationFilter = o.AnimationFilter ?? Array.Empty<System.Text.RegularExpressions.Regex>();
 
                 var classTypeFilter = Array.Empty<ClassIDType>();
                 if (!o.TypeFilter.IsNullOrEmpty())
@@ -119,6 +120,12 @@ namespace AnimeStudio.CLI
                     TypeFlags.SetType(ClassIDType.AssetBundle, true, false);
                 }
 
+                if (!Studio.AnimationFilter.IsNullOrEmpty())
+                {
+                    // Clips must be parsed to be bound to models; keep whatever export flag the user chose.
+                    TypeFlags.SetType(ClassIDType.AnimationClip, true, ClassIDType.AnimationClip.CanExport());
+                }
+
                 assetsManager.Silent = o.Silent;
                 assetsManager.Game = game;
                 assetsManager.SpecifyUnityVersion = o.UnityVersion;
@@ -143,6 +150,21 @@ namespace AnimeStudio.CLI
                 Logger.Info("Scanning for files...");
                 var files = o.Input.Attributes.HasFlag(FileAttributes.Directory) ? Directory.GetFiles(o.Input.FullName, "*.*", SearchOption.AllDirectories).OrderBy(x => x.Length).ToArray() : new string[] { o.Input.FullName };
                 Logger.Info($"Found {files.Length} files");
+
+                if (!string.IsNullOrEmpty(o.CabMap))
+                {
+                    // Load an already-built CABMap and resolve dependencies, without the export being
+                    // skipped (--map_op CABMap alone loads the map but never reaches the export step).
+                    if (AssetsHelper.LoadCABMapInternal(o.CabMap))
+                    {
+                        assetsManager.ResolveDependencies = true;
+                    }
+                    else
+                    {
+                        Logger.Error($"Could not load CABMap '{o.CabMap}' (looked for Maps/{o.CabMap}.bin in the working directory).");
+                        return;
+                    }
+                }
 
                 if (o.MapOp.HasFlag(MapOpType.CABMap))
                 {
@@ -180,15 +202,27 @@ namespace AnimeStudio.CLI
                     var toReadFile = ImportHelper.ProcessingSplitFiles(files.ToList());
 
                     var fileList = new List<string>(toReadFile);
-                    foreach (var file in fileList)
+
+                    // Default: one file per session (low RAM). --load_together: everything in one session,
+                    // so a rig and its AnimationClips from different bundles can be paired.
+                    var batches = o.LoadTogether && fileList.Count > 0
+                        ? new List<string[]> { fileList.ToArray() }
+                        : fileList.Select(f => new[] { f }).ToList();
+
+                    foreach (var batch in batches)
                     {
-                        assetsManager.LoadFiles(file);
+                        assetsManager.LoadFiles(batch);
                         if (assetsManager.assetsFileList.Count > 0)
                         {
                             BuildAssetData(classTypeFilter, o.NameFilter, o.ContainerFilter, ref i);
+                            if (!Studio.AnimationFilter.IsNullOrEmpty() && animationClips.Count == 0)
+                            {
+                                Logger.Warning("--animations matched no AnimationClip in this load session; models will only get clips from their Animator controller. (Different bundles? try --load_together)");
+                            }
                             ExportAssets(o.Output.FullName, exportableAssets, o.GroupAssetsType, o.AssetExportType);
                         }
                         exportableAssets.Clear();
+                        animationClips.Clear();
                         assetsManager.Clear();
                     }
                 }

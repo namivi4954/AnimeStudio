@@ -562,12 +562,21 @@ namespace AnimeStudio.CLI
             return false;
         }
 
+        /// <summary>
+        /// Clips selected with --animations in the current load session, or null when none were
+        /// selected/found (null keeps the original behaviour: clips come from the Animator's controller).
+        /// </summary>
+        private static List<AssetItem> GetBoundAnimations()
+        {
+            return Studio.animationClips.Count > 0 ? Studio.animationClips : null;
+        }
+
         public static bool ExportConvertFile(AssetItem item, string exportPath)
         {
             switch (item.Type)
             {
                 case ClassIDType.GameObject:
-                    return ExportGameObject(item, exportPath);
+                    return ExportGameObject(item, exportPath, GetBoundAnimations());
                 case ClassIDType.Texture2D:
                     return ExportTexture2D(item, exportPath);
                 case ClassIDType.AudioClip:
@@ -589,7 +598,7 @@ namespace AnimeStudio.CLI
                 case ClassIDType.Sprite:
                     return ExportSprite(item, exportPath);
                 case ClassIDType.Animator:
-                    return ExportAnimator(item, exportPath);
+                    return ExportAnimator(item, exportPath, GetBoundAnimations());
                 case ClassIDType.AnimationClip:
                     return ExportAnimationClip(item, exportPath);
                 case ClassIDType.MiHoYoBinData:

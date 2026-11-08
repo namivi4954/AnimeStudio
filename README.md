@@ -35,6 +35,23 @@ AnimeStudio.CLI.exe <input> <output> --game GI --types Texture2D,Sprite --export
 
 Useful flags are `--game`, `--types`, `--names` and `--containers` for filtering, `--group_assets` for the output folder layout, `--map_op` and `--map_type` for building asset maps, and `--silent` to keep it quiet. Run it without arguments for the full list.
 
+#### Exporting models with animations from the CLI (fork addition)
+
+Two extra flags let the CLI do what the GUI's "Export Animator with selected AnimationClips" does :
+
+- `--animations <regex...>` : name filter(s) for `AnimationClip` assets that get bound to every exported Animator / GameObject FBX. When omitted (or when nothing matches) the old behaviour is kept : clips only come from the Animator's controller.
+- `--load_together` : load all selected input files in one session instead of one file at a time. Needed when the rig and its clips live in different bundles. Uses more RAM, so narrow the selection with `--names` / `--containers` first.
+
+```
+AnimeStudio.CLI.exe <blocks> <out> --game GI --map_op AssetMap,Load --map_type MessagePack --map_name <path\to\assets_map.map> ^
+    --cab_map <cabmap_name> --types Animator AnimationClip:Parse --names <character regex> --animations <clip regex> --load_together
+```
+
+- `--cab_map <name>` : loads `Maps/<name>.bin` (relative to the working directory) and enables dependency resolution. Added because `--map_op CABMap` on its own loads the CABMap but then skips the export step, so models came out without their dependencies.
+- The clip regex depends on the game's actual clip names. Look them up in the GUI's Asset Browser first, don't guess.
+
+`AnimationClip:Parse` loads clips without also exporting them as `.anim` files. This only wires clips into the FBX export : Genshin humanoid clips still lose their body (muscle) curves, see issue #124.
+
 The [official wiki](https://github.com/Escartem/AnimeStudio/wiki) goes into detail on all of this. If something isn't covered there, look at the [original tutorial by Modder4869](https://gist.github.com/Modder4869/0f5371f8879607eb95b8e63badca227e) or the [original readme](https://github.com/RazTools/Studio/blob/main/README.md). Otherwise [join the discord](https://discord.gg/fzRdtVh) and ask there !
 
 ---

@@ -30,6 +30,11 @@ namespace AnimeStudio.CLI
         public static AssemblyLoader assemblyLoader = new AssemblyLoader();
         public static List<AssetItem> exportableAssets = new List<AssetItem>();
 
+        /// <summary>Name filter for AnimationClips to bind to exported models (--animations).</summary>
+        public static Regex[] AnimationFilter = Array.Empty<Regex>();
+        /// <summary>AnimationClips found in the current load session that match <see cref="AnimationFilter"/>.</summary>
+        public static List<AssetItem> animationClips = new List<AssetItem>();
+
         public static Dictionary<ulong, string> Paths {  get; set; } = new Dictionary<ulong, string>();
         public static List<string> PathStrings { get; set; } = new List<string>();
         public static List<string> VOStrings { get; set; } = new List<string>();
@@ -269,6 +274,20 @@ namespace AnimeStudio.CLI
                 if (Game.Type.IsGISubGroup())
                 {
                     UpdateContainers();
+                }
+            }
+
+            // Collect clips to bind to exported models. Done before the type/name filters below,
+            // because those drop AnimationClips when the user only asked for Animator/GameObject.
+            animationClips.Clear();
+            if (!AnimationFilter.IsNullOrEmpty())
+            {
+                foreach (var item in objectAssetItemDic.Values)
+                {
+                    if (item.Asset is AnimationClip && AnimationFilter.Any(r => r.IsMatch(item.Text)))
+                    {
+                        animationClips.Add(item);
+                    }
                 }
             }
 

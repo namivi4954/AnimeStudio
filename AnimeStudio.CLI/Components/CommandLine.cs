@@ -26,6 +26,9 @@ namespace AnimeStudio.CLI
             rootCommand.Options.Add(optionsBinder.TypeFilter);
             rootCommand.Options.Add(optionsBinder.NameFilter);
             rootCommand.Options.Add(optionsBinder.ContainerFilter);
+            rootCommand.Options.Add(optionsBinder.AnimationFilter);
+            rootCommand.Options.Add(optionsBinder.LoadTogether);
+            rootCommand.Options.Add(optionsBinder.CabMap);
             rootCommand.Options.Add(optionsBinder.GameName);
             rootCommand.Options.Add(optionsBinder.MapOp);
             rootCommand.Options.Add(optionsBinder.MapType);
@@ -51,6 +54,9 @@ namespace AnimeStudio.CLI
         public string[] TypeFilter { get; set; }
         public Regex[] NameFilter { get; set; }
         public Regex[] ContainerFilter { get; set; }
+        public Regex[] AnimationFilter { get; set; }
+        public bool LoadTogether { get; set; }
+        public string CabMap { get; set; }
         public string GameName { get; set; }
         public MapOpType MapOp { get; set; }
         public ExportListType MapType { get; set; }
@@ -72,6 +78,9 @@ namespace AnimeStudio.CLI
         public readonly Option<string[]> TypeFilter;
         public readonly Option<Regex[]> NameFilter;
         public readonly Option<Regex[]> ContainerFilter;
+        public readonly Option<Regex[]> AnimationFilter;
+        public readonly Option<bool> LoadTogether;
+        public readonly Option<string> CabMap;
         public readonly Option<string> GameName;
         public readonly Option<MapOpType> MapOp;
         public readonly Option<ExportListType> MapType;
@@ -114,6 +123,20 @@ namespace AnimeStudio.CLI
                 Description = "Specify container regex filter(s).",
                 AllowMultipleArgumentsPerToken = true,
                 CustomParser = ParseRegexFilter
+            };
+            AnimationFilter = new Option<Regex[]>("--animations")
+            {
+                Description = "Name regex filter(s) for AnimationClips to bind to every exported Animator/GameObject model (FBX).",
+                AllowMultipleArgumentsPerToken = true,
+                CustomParser = ParseRegexFilter
+            };
+            LoadTogether = new Option<bool>("--load_together")
+            {
+                Description = "Load all selected input files in a single session (needed when a rig and its animation clips live in different bundles). Uses more RAM."
+            };
+            CabMap = new Option<string>("--cab_map")
+            {
+                Description = "Name of an existing CABMap (Maps/<name>.bin, relative to the working directory) to load for dependency resolution. Unlike --map_op CABMap this still exports."
             };
             GameName = new Option<string>("--game")
             {
@@ -172,6 +195,7 @@ namespace AnimeStudio.CLI
             TypeFilter.Validators.Add(FilterValidator);
             NameFilter.Validators.Add(FilterValidator);
             ContainerFilter.Validators.Add(FilterValidator);
+            AnimationFilter.Validators.Add(FilterValidator);
             AIFile.Validators.Add(LegalPathValidator);
             DummyDllFolder.Validators.Add(LegalPathValidator);
             Key.Validators.Add(result =>
@@ -314,6 +338,9 @@ namespace AnimeStudio.CLI
             TypeFilter = parseResult.GetValue(TypeFilter),
             NameFilter = parseResult.GetValue(NameFilter),
             ContainerFilter = parseResult.GetValue(ContainerFilter),
+            AnimationFilter = parseResult.GetValue(AnimationFilter),
+            LoadTogether = parseResult.GetValue(LoadTogether),
+            CabMap = parseResult.GetValue(CabMap),
             GameName = parseResult.GetRequiredValue(GameName),
             MapOp = parseResult.GetValue(MapOp),
             MapType = parseResult.GetValue(MapType),
