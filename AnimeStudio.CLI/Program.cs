@@ -182,7 +182,13 @@ namespace AnimeStudio.CLI
                 {
                     if (o.MapOp.HasFlag(MapOpType.Load))
                     {
-                        files = AssetsHelper.ParseAssetMap(o.MapName, o.MapType, classTypeFilter, o.NameFilter, o.ContainerFilter);
+                        // When --animations is used, its regexes also pick which bundles to load from the map,
+                        // so clip bundles get selected without --names having to match the clips too
+                        // (--names still alone decides which models are exported).
+                        var mapNameFilter = !o.AnimationFilter.IsNullOrEmpty() && !o.NameFilter.IsNullOrEmpty()
+                            ? o.NameFilter.Concat(o.AnimationFilter).ToArray()
+                            : o.NameFilter;
+                        files = AssetsHelper.ParseAssetMap(o.MapName, o.MapType, classTypeFilter, mapNameFilter, o.ContainerFilter);
                     }
                     else
                     {

@@ -40,6 +40,7 @@ Useful flags are `--game`, `--types`, `--names` and `--containers` for filtering
 Two extra flags let the CLI do what the GUI's "Export Animator with selected AnimationClips" does :
 
 - `--animations <regex...>` : name filter(s) for `AnimationClip` assets that get bound to every exported Animator / GameObject FBX. When omitted (or when nothing matches) the old behaviour is kept : clips only come from the Animator's controller.
+- With `--map_op AssetMap,Load`, the `--animations` regexes are also used to pick which bundles to load from the asset map, so `--names` only needs to match the model(s).
 - `--load_together` : load all selected input files in one session instead of one file at a time. Needed when the rig and its clips live in different bundles. Uses more RAM, so narrow the selection with `--names` / `--containers` first.
 
 ```
